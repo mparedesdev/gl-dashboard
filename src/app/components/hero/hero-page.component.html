@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard de Ventas de Ganado</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style id="app-style">
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3B82F6;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .sidebar {
+            height: calc(100vh - 64px);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                height: auto;
+            }
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <!-- Sidebar -->
+        <nav class="bg-blue-800 text-white w-full lg:w-64 p-4 sidebar">
+            <div class="flex items-center justify-center lg:justify-start mb-8">
+                <i class="fas fa-cow text-2xl mr-2"></i>
+                <h1 class="text-xl font-bold">GanadoTrack</h1>
+            </div>
+            <ul>
+                <li class="mb-2">
+                    <a href="javascript:void(0)" class="flex items-center p-2 rounded bg-blue-700 hover:bg-blue-600">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="javascript:void(0)" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-coins mr-3"></i>
+                        <span>Ventas</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="javascript:void(0)" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-list mr-3"></i>
+                        <span>Inventario</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="javascript:void(0)" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-calculator mr-3"></i>
+                        <span>Finanzas</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="javascript:void(0)" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-cog mr-3"></i>
+                        <span>Configuración</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-4">
+            <!-- Header -->
+            <header class="bg-white p-4 rounded-lg shadow mb-6 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800">Dashboard de Ventas</h1>
+                <div class="flex items-center">
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar..." class="border rounded-full px-4 py-2 pr-10">
+                        <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                    </div>
+                    <div class="ml-4">
+                        <button class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                            <i class="fas fa-user"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow p-6 card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Ventas Totales</p>
+                            <h2 class="text-3xl font-bold text-gray-800" id="total-sales">0</h2>
+                            <p class="text-green-500 text-sm"><i class="fas fa-arrow-up"></i> 12% desde el mes pasado
+                            </p>
+                        </div>
+                        <div class="bg-blue-100 rounded-full p-3">
+                            <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Ingresos Totales</p>
+                            <h2 class="text-3xl font-bold text-gray-800" id="total-income">$0</h2>
+                            <p class="text-green-500 text-sm"><i class="fas fa-arrow-up"></i> 8% desde el mes pasado</p>
+                        </div>
+                        <div class="bg-green-100 rounded-full p-3">
+                            <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Gastos Totales</p>
+                            <h2 class="text-3xl font-bold text-gray-800" id="total-expenses">$0</h2>
+                            <p class="text-red-500 text-sm"><i class="fas fa-arrow-up"></i> 5% desde el mes pasado</p>
+                        </div>
+                        <div class="bg-red-100 rounded-full p-3">
+                            <i class="fas fa-file-invoice-dollar text-red-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Distribución por Tipo de Ganado</h3>
+                    <div class="chart-container">
+                        <canvas id="livestock-chart"></canvas>
+                        <div id="livestock-chart-empty" class="hidden flex items-center justify-center h-full">
+                            <p class="text-gray-500 text-center">No hay datos disponibles</p>
+                        </div>
+                        <div id="livestock-chart-loading" class="flex items-center justify-center h-full">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Ingresos vs Egresos</h3>
+                    <div class="chart-container">
+                        <canvas id="finance-chart"></canvas>
+                        <div id="finance-chart-empty" class="hidden flex items-center justify-center h-full">
+                            <p class="text-gray-500 text-center">No hay datos disponibles</p>
+                        </div>
+                        <div id="finance-chart-loading" class="flex items-center justify-center h-full">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Table -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">Historial de Transacciones</h3>
+                    <div class="flex">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center mr-2">
+                            <i class="fas fa-download mr-2"></i> Exportar
+                        </button>
+                        <button id="add-transaction-btn"
+                            class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-plus mr-2"></i> Nueva Transacción
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white" id="transactions-table">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th
+                                    class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Fecha
+                                </th>
+                                <th
+                                    class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Categoría
+                                </th>
+                                <th
+                                    class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Tipo de Ganado
+                                </th>
+                                <th
+                                    class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Cantidad
+                                </th>
+                                <th
+                                    class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Monto
+                                </th>
+                                <th
+                                    class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-body">
+                            <tr id="transactions-loading" class="text-center">
+                                <td colspan="6" class="px-6 py-10">
+                                    <div class="flex justify-center">
+                                        <div class="loading-spinner"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr id="transactions-empty" class="hidden text-center">
+                                <td colspan="6" class="px-6 py-10 text-gray-500">
+                                    No hay transacciones disponibles
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 flex justify-between items-center">
+                    <div class="text-sm text-gray-500">
+                        Mostrando <span id="records-count">0</span> registros
+                    </div>
+                    <div class="flex">
+                        <button class="px-3 py-1 rounded border mr-2 disabled:opacity-50">Anterior</button>
+                        <button class="px-3 py-1 rounded bg-blue-600 text-white mr-2">1</button>
+                        <button class="px-3 py-1 rounded border mr-2 disabled:opacity-50">Siguiente</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Transaction Modal -->
+        <div id="transaction-modal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">Nueva Transacción</h3>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-500">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="transaction-form">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="transaction-date">
+                            Fecha
+                        </label>
+                        <input
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            id="transaction-date" type="date" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="transaction-category">
+                            Categoría
+                        </label>
+                        <select
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            id="transaction-category" required>
+                            <option value="">Seleccione una categoría</option>
+                            <option value="sale">Venta</option>
+                            <option value="income">Ingreso</option>
+                            <option value="expense">Gasto</option>
+                        </select>
+                    </div>
+                    <div class="mb-4 livestock-field">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="livestock-type">
+                            Tipo de Ganado
+                        </label>
+                        <select
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            id="livestock-type">
+                            <option value="">Seleccione un tipo</option>
+                            <option value="cattle">Vacuno</option>
+                            <option value="sheep">Ovino</option>
+                            <option value="goat">Caprino</option>
+                            <option value="pig">Porcino</option>
+                            <option value="horse">Equino</option>
+                        </select>
+                    </div>
+                    <div class="mb-4 livestock-field">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity">
+                            Cantidad
+                        </label>
+                        <input
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            id="quantity" type="number" min="1">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="amount">
+                            Monto
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500">$</span>
+                            </div>
+                            <input
+                                class="shadow appearance-none border rounded w-full py-2 px-3 pl-7 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                id="amount" type="number" min="0" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end">
+                        <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+                            type="button" id="cancel-transaction">
+                            Cancelar
+                        </button>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            type="submit">
+                            Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script id="app-script">
+        // Initialize the app when DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize charts
+            initCharts();
+
+            // Load data
+            loadDashboardData();
+
+            // Setup event listeners
+            document.getElementById('add-transaction-btn').addEventListener('click', openTransactionModal);
+            document.getElementById('close-modal').addEventListener('click', closeTransactionModal);
+            document.getElementById('cancel-transaction').addEventListener('click', closeTransactionModal);
+            document.getElementById('transaction-form').addEventListener('submit', handleTransactionSubmit);
+            document.getElementById('transaction-category').addEventListener('change', toggleLivestockFields);
+
+            // Initialize LocalStorage if needed
+            if (!localStorage.getItem('livestock-transactions')) {
+                localStorage.setItem('livestock-transactions', JSON.stringify([]));
+            }
+        });
+
+        // Charts initialization
+        function initCharts() {
+            // Create livestock distribution chart
+            const livestockCanvas = document.getElementById('livestock-chart');
+            window.livestockChart = new Chart(livestockCanvas, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#4B6BFB',
+                            '#7E57C2',
+                            '#EC407A',
+                            '#F57C00',
+                            '#7CB342',
+                            '#26A69A'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // Create finance chart
+            const financeCanvas = document.getElementById('finance-chart');
+            window.financeChart = new Chart(financeCanvas, {
+                type: 'pie',
+                data: {
+                    labels: ['Ingresos', 'Gastos'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: [
+                            '#4CAF50',
+                            '#F44336'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // Hide loading spinners and show empty states if needed
+            document.getElementById('livestock-chart-loading').classList.add('hidden');
+            document.getElementById('finance-chart-loading').classList.add('hidden');
+            document.getElementById('livestock-chart-empty').classList.remove('hidden');
+            document.getElementById('finance-chart-empty').classList.remove('hidden');
+        }
+
+        // Load dashboard data
+        function loadDashboardData() {
+            // Simulate loading data
+            setTimeout(() => {
+                try {
+                    const transactionsData = JSON.parse(localStorage.getItem('livestock-transactions')) || [];
+
+                    // Update summary cards
+                    updateSummaryCards(transactionsData);
+
+                    // Update charts
+                    updateCharts(transactionsData);
+
+                    // Update transactions table
+                    updateTransactionsTable(transactionsData);
+
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                }
+            }, 1000);
+        }
+
+        // Update summary cards with data
+        function updateSummaryCards(transactions) {
+            // This would be calculated from real data, but we'll use placeholders for the prototype
+            document.getElementById('total-sales').textContent = "150";
+            document.getElementById('total-income').textContent = "$48,750";
+            document.getElementById('total-expenses').textContent = "$12,340";
+        }
+
+        // Update charts with data
+        function updateCharts(transactions) {
+            // This would be calculated from real data, but we'll use placeholders for the prototype
+
+            // Update livestock chart
+            const livestockData = {
+                labels: ['Vacuno', 'Ovino', 'Caprino', 'Porcino', 'Equino'],
+                data: [45, 25, 15, 10, 5]
+            };
+
+            window.livestockChart.data.labels = livestockData.labels;
+            window.livestockChart.data.datasets[0].data = livestockData.data;
+            window.livestockChart.update();
+
+            // Update finance chart
+            const financeData = {
+                data: [48750, 12340]  // Income, Expenses
+            };
+
+            window.financeChart.data.datasets[0].data = financeData.data;
+            window.financeChart.update();
+
+            // Hide loading and empty states
+            document.getElementById('livestock-chart-loading').classList.add('hidden');
+            document.getElementById('finance-chart-loading').classList.add('hidden');
+            document.getElementById('livestock-chart-empty').classList.add('hidden');
+            document.getElementById('finance-chart-empty').classList.add('hidden');
+        }
+
+        // Update transactions table
+        function updateTransactionsTable(transactions) {
+            const tableBody = document.getElementById('transactions-body');
+            const loadingRow = document.getElementById('transactions-loading');
+            const emptyRow = document.getElementById('transactions-empty');
+
+            // Show loading indicator
+            loadingRow.classList.remove('hidden');
+            emptyRow.classList.add('hidden');
+
+            // Clear existing rows (except loading and empty rows)
+            const rows = tableBody.querySelectorAll('tr:not(#transactions-loading):not(#transactions-empty)');
+            rows.forEach(row => row.remove());
+
+            // Simulate delay for data loading
+            setTimeout(() => {
+                loadingRow.classList.add('hidden');
+
+                // This would use real data, but we'll use placeholders for the prototype
+                const demoTransactions = [
+                    { id: 1, date: '2023-06-15', category: 'sale', type: 'cattle', quantity: 5, amount: 12500 },
+                    { id: 2, date: '2023-06-12', category: 'expense', type: 'feed', quantity: null, amount: 3200 },
+                    { id: 3, date: '2023-06-10', category: 'sale', type: 'sheep', quantity: 12, amount: 6000 },
+                    { id: 4, date: '2023-06-05', category: 'expense', type: 'veterinary', quantity: null, amount: 1500 },
+                    { id: 5, date: '2023-06-01', category: 'sale', type: 'goat', quantity: 8, amount: 4800 }
+                ];
+
+                if (demoTransactions.length > 0) {
+                    // Add rows to the table
+                    demoTransactions.forEach(transaction => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        row.innerHTML = `
+              <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">${formatDate(transaction.date)}</td>
+              <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getCategoryBadgeClass(transaction.category)}">
+                  ${getCategoryLabel(transaction.category)}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">${transaction.type || '-'}</td>
+              <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">${transaction.quantity || '-'}</td>
+              <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">$${transaction.amount.toLocaleString('es-MX')}</td>
+              <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">
+                <button class="text-blue-600 hover:text-blue-800 mr-3">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="text-red-600 hover:text-red-800">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </td>
+            `;
+                        tableBody.appendChild(row);
+                    });
+
+                    // Update record count
+                    document.getElementById('records-count').textContent = demoTransactions.length;
+                } else {
+                    emptyRow.classList.remove('hidden');
+                    document.getElementById('records-count').textContent = '0';
+                }
+            }, 1000);
+        }
+
+        // Helper functions for formatting data
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function getCategoryLabel(category) {
+            const labels = {
+                'sale': 'Venta',
+                'income': 'Ingreso',
+                'expense': 'Gasto'
+            };
+            return labels[category] || category;
+        }
+
+        function getCategoryBadgeClass(category) {
+            const classes = {
+                'sale': 'bg-green-100 text-green-800',
+                'income': 'bg-blue-100 text-blue-800',
+                'expense': 'bg-red-100 text-red-800'
+            };
+            return classes[category] || 'bg-gray-100 text-gray-800';
+        }
+
+        // Modal functions
+        function openTransactionModal() {
+            document.getElementById('transaction-modal').classList.remove('hidden');
+            document.getElementById('transaction-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeTransactionModal() {
+            document.getElementById('transaction-modal').classList.add('hidden');
+            document.getElementById('transaction-form').reset();
+        }
+
+        function toggleLivestockFields() {
+            const category = document.getElementById('transaction-category').value;
+            const livestockFields = document.querySelectorAll('.livestock-field');
+
+            if (category === 'sale') {
+                livestockFields.forEach(field => field.classList.remove('hidden'));
+            } else {
+                livestockFields.forEach(field => field.classList.add('hidden'));
+            }
+        }
+
+        function handleTransactionSubmit(event) {
+            event.preventDefault();
+
+            // Get form values
+            const date = document.getElementById('transaction-date').value;
+            const category = document.getElementById('transaction-category').value;
+            const livestockType = document.getElementById('livestock-type').value;
+            const quantity = document.getElementById('quantity').value;
+            const amount = document.getElementById('amount').value;
+
+            // Create transaction object
+            const transaction = {
+                id: Date.now(),
+                date,
+                category,
+                type: category === 'sale' ? livestockType : null,
+                quantity: category === 'sale' ? parseInt(quantity) : null,
+                amount: parseFloat(amount)
+            };
+
+            // Add to LocalStorage
+            try {
+                const transactions = JSON.parse(localStorage.getItem('livestock-transactions')) || [];
+                transactions.push(transaction);
+                localStorage.setItem('livestock-transactions', JSON.stringify(transactions));
+
+                // Update UI
+                loadDashboardData();
+
+                // Close modal
+                closeTransactionModal();
+
+                // Show success message
+                alert('Transacción guardada exitosamente.');
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+                alert('Error al guardar la transacción.');
+            }
+        }
+    </script>
+</body>
+
+</html>
