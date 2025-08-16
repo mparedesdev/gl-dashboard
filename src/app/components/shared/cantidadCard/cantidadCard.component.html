@@ -1,0 +1,19 @@
+<style>
+    mat-card {
+        margin: 10px;
+        padding: 10px;
+    }
+
+
+</style>
+
+    @for (t of cantidades(); track $index) {
+
+    <mat-card>
+        <mat-card-header>
+            <div mat-card-avatar class="example-header-image"></div>
+            <mat-card-title>{{t.titulo}}</mat-card-title>
+            <mat-card-subtitle>{{t.valor}}</mat-card-subtitle>
+        </mat-card-header>
+    </mat-card>
+    }

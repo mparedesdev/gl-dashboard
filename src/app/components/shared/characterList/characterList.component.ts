@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { Widget } from '../../../interfaces/widget.interface';
+import { Widget } from '../../../interfaces/character.interface';
 import { MatCardModule } from '@angular/material/card';
 
 @Component({
@@ -9,4 +9,5 @@ import { MatCardModule } from '@angular/material/card';
 })
 export class CharacterListComponent {
   widgets=input<Widget[]>()
+  listName=input<string>()
 }

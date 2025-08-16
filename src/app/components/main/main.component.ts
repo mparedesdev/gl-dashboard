@@ -1,49 +1,54 @@
 import { ComponentType } from '@angular/cdk/portal';
 import { Component, OnInit, signal } from '@angular/core';
-import { MatGridListModule } from '@angular/material/grid-list';
+import { MatGridListModule, MatGridList } from '@angular/material/grid-list';
 import { ChartComponent } from '../../plantillas/chart';
 import { StatsCardComponent } from '../../plantillas/stats-card';
 import { DataTableComponent } from '../../plantillas/data-table';
 import { MatCardModule } from '@angular/material/card';
-import{MatInputModule} from '@angular/material/input';
+import { MatInputModule } from '@angular/material/input';
 import { CharacterListComponent } from "../shared/characterList/characterList.component";
+import { AddComponent } from "../shared/add/dragonball-add.component";
 
 
-interface Widget {
-  id: number;
-  title: string;
-  subtitle: string;
-
-}
+import { Widget } from '../../interfaces/character.interface';
+import { ShowDataComponent } from "../shared/showData/showData.component";
+import { MatGridTile } from "../../../../node_modules/@angular/material/grid-list/index";
+import { BarraCardComponent } from "../shared/barraCard/barraCard.component";
+import { CantidadCardComponent } from "../shared/cantidadCard/cantidadCard.component";
 
 @Component({
   selector: 'app-main',
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.css'],
   imports: [
-    MatGridListModule, MatCardModule, MatInputModule,
-    CharacterListComponent
+    CharacterListComponent,
+    AddComponent,
+    ShowDataComponent,
+    MatGridListModule,
+    BarraCardComponent,
+    CantidadCardComponent
 ]
 })
-export class MainComponent  {
+export class MainComponent {
 
-  title=signal('');
-  subtitle=signal('');
 
-  widgets=signal<Widget[]>([
+
+  widgets = signal<Widget[]>([
     { id: 1, title: 'Widget 1', subtitle: 'Subtitle 1' },
-    { id: 2, title: 'Widget 2', subtitle: 'Subtitle 1' },
-    { id: 3, title: 'Widget 3', subtitle: 'Subtitle 1' },
+    { id: 1, title: 'Widget 1', subtitle: 'Subtitle 1' },
+    { id: 1, title: 'Widget 1', subtitle: 'Subtitle 1' },
   ])
 
-  agregarCard(){
-    this.widgets.update(w=> [...w, { id: w.length + 1, title: this.title(), subtitle: this.subtitle() }]);
+  
+
+  addWidget(newWidget: Widget) {
+    this.widgets.update(
+      list => [...list, newWidget]
+    )
   }
 
-  }
-
-
-  // crea una app con angular 20, angular material y leafs para los mapas, dame el codigo html y el ts para que funcione correctamente, usa signals para los valores, y comunicacion entre componentes que sean similares para que se puedan reciclar
+}
+// crea una app con angular 20, angular material y leafs para los mapas, dame el codigo html y el ts para que funcione correctamente, usa signals para los valores, y comunicacion entre componentes que sean similares para que se puedan reciclar
 
 
 
